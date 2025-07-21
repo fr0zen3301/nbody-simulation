@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "/Users/khamidullojonmaratov/C language/Assembly:C++/c_ples_ples/n-body-simulation",
+      "program": "/Users/khamidullojonmaratov/C language/Assembly:C++/c_ples_ples/n-body-simulation/build/Debug/outDebug"
+    }
+  ]
+}
