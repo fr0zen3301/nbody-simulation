@@ -1,7 +1,12 @@
 #pragma once 
 #include "Vector2D.hpp"
+#include <vector>
+#include <SFML/System/Vector2.hpp>
 
 class Body {
+    std::vector<sf::Vector2f> trail; // to store past positions
+    const size_t maxTrailLength = 300; // can be tuned
+
 public:
     Body(double mass, const Vector2D& position, const Vector2D& velocity);
 
@@ -9,6 +14,7 @@ public:
     void update(double dt);
     void resetForce();
     Vector2D getPosition() const;
+    const std::vector<sf::Vector2f>& getTrail() const { return trail; }
 
     // Gravitational force between this and other body
     Vector2D computeGravitationalForce(const Body& other) const;

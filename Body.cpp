@@ -17,6 +17,12 @@ void Body::update(double dt) {
     Vector2D acceleration = force / mass;
     velocity += acceleration * dt;
     position += velocity * dt;
+
+    // add to trail
+    trail.push_back(sf::Vector2f(static_cast<float>(position.x), static_cast<float>(position.y)));
+    if (trail.size() > maxTrailLength) {
+        trail.erase(trail.begin()); // remove oldest points
+    }
 }
 
 Vector2D Body::getPosition() const {

@@ -6,7 +6,7 @@ int main() {
     window.setFramerateLimit(60);
 
     Simulation sim;
-
+    const float TIME_SCALE = 10.f;
     sf::Clock clock;
 
     while(window.isOpen()) {
@@ -18,7 +18,7 @@ int main() {
 
         float dt = clock.restart().asSeconds();
 
-        sim.update(dt);
+        sim.update(dt * TIME_SCALE); // accelerating time to make it visible for a human eye
 
         window.clear(sf::Color::Black);
         sim.draw(window);
