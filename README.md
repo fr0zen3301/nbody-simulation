@@ -10,3 +10,5 @@ SFML (Simple and Fast Multimedia Library), [the tutorials and documentation.](ht
 🟨 - Medium mass (mass > 2e6)
 🟦 - Lighter objects (mass > 1e5)
 ⬜️ - Tiny (moons or planets) 
+
+**TO-DO:** add size regarding the mass
