@@ -6,6 +6,7 @@ Simulation::Simulation() {
     // initial bodies
     bodies.emplace_back(Body(1e14, Vector2D(300, 300), Vector2D(0, 5)));
     bodies.emplace_back(Body(1e14, Vector2D(500, 300), Vector2D(0, -5)));
+    bodies.emplace_back(Body(2e6, Vector2D(400, 200), Vector2D(0, 0)));
 
     // initialize trails
     trails.resize(bodies.size());

@@ -2,7 +2,21 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/Color.hpp>
 
-Body::Body(double m, const Vector2D& pos, const Vector2D& vel) 
+/*  
+    Constructor gets mass, init position, init velocity.
+    vel - initial velocity, can be set manually if the system is known (stable system),
+    can be set to zero to simulate a body starting at rest.
+
+    Velocity has 2 parameters:
+    vx - velocity in x direction
+    vy - velocity in y direction
+    Vector2D vel(0.0, -50.0) ->  Upward, 50 units per second; Vector2D vel(50.0, 0.0) -> Right
+
+    Initial velocity doesn't depend on position. A body can be put anywhere and given any velocity.
+    The point is how it is applied over time.
+*/
+
+Body::Body(double m, const Vector2D& pos, const Vector2D& vel)  
     : mass(m), position(pos), velocity(vel), force(0, 0) {
 
         // set color by its mass
