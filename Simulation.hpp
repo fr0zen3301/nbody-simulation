@@ -4,6 +4,7 @@
 #include <vector>
 #include "Body.hpp"
 #include <SFML/Graphics.hpp>
+#include <deque>
 
 class Simulation {
 public:
@@ -14,6 +15,7 @@ public:
 
 private:
     std::vector<Body> bodies;
+    std::vector<std::deque<sf::Vertex>> trails; 
 };
 
 #endif

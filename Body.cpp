@@ -1,8 +1,22 @@
 #include "Body.hpp"
 #include <SFML/Graphics.hpp>
+#include <SFML/Graphics/Color.hpp>
 
 Body::Body(double m, const Vector2D& pos, const Vector2D& vel) 
-    : mass(m), position(pos), velocity(vel), force(0, 0) {}
+    : mass(m), position(pos), velocity(vel), force(0, 0) {
+
+        // set color by its mass
+        if (mass > 8e6)
+            color = sf::Color::Red;
+        else if (mass > 5e6)
+            color = sf::Color(255, 140, 0); // orange
+        else if (mass > 2e6)
+            color = sf::Color::Yellow;
+        else if (mass > 1e6)
+            color = sf::Color::Cyan;
+        else
+            color = sf::Color::White;
+    }
     
 void Body::applyForce(const Vector2D& f) {
     force += f;

@@ -6,6 +6,9 @@ Simulation::Simulation() {
     // initial bodies
     bodies.emplace_back(Body(1e14, Vector2D(300, 300), Vector2D(0, 5)));
     bodies.emplace_back(Body(1e14, Vector2D(500, 300), Vector2D(0, -5)));
+
+    // initialize trails
+    trails.resize(bodies.size());
 }
 
 void Simulation::update(double dt) {
@@ -22,27 +25,39 @@ void Simulation::update(double dt) {
         }
     }
 
-    // update bodies
-    for (auto& body : bodies) {
-        body.update(dt);
+    // update bodies and record trails
+    for (size_t i = 0; i < bodies.size(); ++i) {
+        bodies[i].update(dt);
+
+        // add position to trail
+        sf::Vertex vertex;
+        vertex.position = sf::Vector2f(static_cast<float>(bodies[i].position.x), static_cast<float>(bodies[i].position.y));
+        vertex.color = bodies[i].color; 
+        trails[i].push_back(vertex);
+
+        // limit trail length
+        if (trails[i].size() > 500) {
+            trails[i].pop_front();
+        }
     }
 }
 
 void Simulation::draw(sf::RenderWindow& window) {
-    for (const auto& body : bodies) {
-        // draw trail
-        const auto& trail = body.getTrail();
-        sf::VertexArray line(sf::PrimitiveType::LineStrip, trail.size());
-        for (size_t i = 0; i < trail.size(); ++i) {
-            line[i].position = trail[i];
-            line[i].color = sf::Color(255, 255, 255, static_cast<uint8_t>(255 * i / trail.size())); //fade effect
-        }
-        window.draw(line);
+    for (size_t i = 0; i < bodies.size(); ++i) {
+        const Body& body = bodies[i];
+
         // draw body
-        sf::CircleShape circle(5.f);
-        circle.setFillColor(sf::Color::White);
-        Vector2D pos = body.getPosition();
-        circle.setPosition(sf::Vector2f(static_cast<float>(pos.x), static_cast<float>(pos.y)));
+        sf::CircleShape circle(5);
+        circle.setPosition(sf::Vector2f(static_cast<float>(body.position.x), static_cast<float>(body.position.y)));
+        circle.setFillColor(body.color); // apply the color
+        circle.setOrigin(sf::Vector2f(5.f, 5.f));
         window.draw(circle);
+
+        // Convert deque trail to sf::VertexArray for drawing
+        sf::VertexArray trail(sf::PrimitiveType::LineStrip, trails[i].size());
+        for (size_t j = 0; j < trails[i].size(); ++j) {
+            trail[j] =trails[i][j];
+        }
+        window.draw(trail);
     }
 }
