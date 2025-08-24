@@ -12,6 +12,7 @@ public:
 
     void update(double dt);
     void draw(sf::RenderWindow& window); 
+    void addBody(double mass, const Vector2D& position, const Vector2D& velocity);
 
 private:
     std::vector<Body> bodies;

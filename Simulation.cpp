@@ -6,7 +6,7 @@ Simulation::Simulation() {
     // initial bodies
     bodies.emplace_back(Body(1e14, Vector2D(300, 300), Vector2D(0, 5)));
     bodies.emplace_back(Body(1e14, Vector2D(500, 300), Vector2D(0, -5)));
-    bodies.emplace_back(Body(2e6, Vector2D(400, 200), Vector2D(0, 0)));
+    bodies.emplace_back(Body(2e6, Vector2D(400, 200), Vector2D(-5, 0)));
 
     // initialize trails
     trails.resize(bodies.size());
@@ -61,4 +61,10 @@ void Simulation::draw(sf::RenderWindow& window) {
         }
         window.draw(trail);
     }
+}
+
+// add a body by a mouse click, parameters: mass, position, velocity 
+void Simulation::addBody(double mass, const Vector2D& position, const Vector2D& velocity) {
+    bodies.emplace_back(Body(mass, position, velocity));
+    trails.emplace_back();
 }
