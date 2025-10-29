@@ -2,6 +2,10 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/Color.hpp>
 
+constexpr double MASS_RED = 8e6;
+constexpr double MASS_ORANGE = 5e6;
+constexpr double MASS_YELLOW = 2e6;
+constexpr double MASS_CYAN = 1e5;
 /*  
     Constructor gets mass, init position, init velocity.
     vel - initial velocity, can be set manually if the system is known (stable system),
@@ -16,22 +20,20 @@
     The point is how it is applied over time.
 */
 
-Body::Body(double m, const Vector2D& pos, const Vector2D& vel)  
-    : mass(m), position(pos), velocity(vel), force(0, 0) {
+sf::Color getColorByMass(double mass);
 
-        // set color by its mass
-        if (mass > 8e6)
-            color = sf::Color::Red;
-        else if (mass > 5e6)
-            color = sf::Color(255, 140, 0); // orange
-        else if (mass > 2e6)
-            color = sf::Color::Yellow;
-        else if (mass > 1e6)
-            color = sf::Color::Cyan;
-        else
-            color = sf::Color::White;
-    }
+Body::Body(double m, const Vector2D& pos, const Vector2D& vel)  
+    : mass(m), position(pos), velocity(vel), force(0, 0), color(getColorByMass(m)) {}
     
+
+sf::Color getColorByMass(double mass) {
+    if (mass > MASS_RED) return sf::Color::Red;
+    if (mass > MASS_ORANGE) return sf::Color(255, 140, 0);  // Orange
+    if (mass > MASS_YELLOW) return sf::Color::Yellow;
+    if (mass > MASS_CYAN) return sf::Color::Cyan;
+    return sf::Color::White;
+}
+
 void Body::applyForce(const Vector2D& f) {
     force += f;
 }

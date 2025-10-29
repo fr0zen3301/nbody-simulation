@@ -1,0 +1,3 @@
+git add . // add all the files you have changed
+git commit -m "your comment on the changes"
+git push -u origin master // push to github repo 
