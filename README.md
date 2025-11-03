@@ -11,4 +11,4 @@ SFML (Simple and Fast Multimedia Library), [the tutorials and documentation.](ht
 🟦 - Lighter objects (mass > 1e5)
 ⬜️ - Tiny (moons or planets) 
 
-**TO-DO:** Add an option to initiliaze the mass, position and initial velocity of bodies.
+**TO-DO:** Add an option to initiliaze the mass, position and initial velocity of bodies
