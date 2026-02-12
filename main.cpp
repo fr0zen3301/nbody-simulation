@@ -1,49 +1,103 @@
 #include <SFML/Graphics.hpp>
 #include "Simulation.hpp"
+#include <optional>
+#include <functional>
+#include <algorithm>
+#include <cmath>
 
 int main() {
     sf::RenderWindow window(sf::VideoMode({800, 600}), "N-body Simulation");
     window.setFramerateLimit(60);
+
+    std::vector<sf::CircleShape> stars;
+    
+    for (int i = 0; i < 1000; i++) {
+        sf::CircleShape star(1.f);
+        star.setFillColor(sf::Color(200, 200, 200));
+
+        float x = static_cast<float>(rand() % 5000 - 2500);
+        float y = static_cast<float>(rand() % 5000 - 2500);
+        star.setPosition(sf::Vector2f(x, y));
+        
+        stars.push_back(star);
+    }
+
+    sf::Vector2f position(0.f, 0.f);
+    sf::Vector2f size(800.f, 600.f);
+    sf::Vector2f center(0.f, 0.f);
+    sf::View view(sf::FloatRect(position, size));
+    window.setView(view);
+
+    float zoomVelocity = 0.f; // accumulated scroll input
+    float currentZoom = 1.f;  // track zoom level
 
     Simulation sim;
     const float TIME_SCALE = 10.f;
     sf::Clock clock;
     bool mouseHeld = false;
 
-    while(window.isOpen()) {
-        while ( const std::optional event = window.pollEvent()) {
+    while (window.isOpen()) {
+        // Handle events
+        while (const std::optional<sf::Event> event = window.pollEvent()) {
+
             if (event->is<sf::Event::Closed>()) {
                 window.close();
             }
+
+            else if (const auto* wheel = event->getIf<sf::Event::MouseWheelScrolled>()) {
+                if (wheel->wheel == sf::Mouse::Wheel::Vertical) {
+                    zoomVelocity += wheel->delta;
+                }
+            }
         }
-        // left click spawn
-        // mass, velocity, and position are set by default values
-        // TO DO: make a window to set those parameters before spawning
-        if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+        // Apply zoom (Once per Frame)
+        if (std::abs(zoomVelocity) > 0.01f) {
+            sf::Vector2i mousePixel = sf::Mouse::getPosition(window);
+            sf::Vector2f beforeZoomCoords = window.mapPixelToCoords(mousePixel);
+
+            float zoomFactor = std::pow(0.9f, zoomVelocity);
+
+            currentZoom *= zoomFactor;
+            currentZoom = std::clamp(currentZoom, 0.5f, 10.f);
+
+            view.zoom(zoomFactor);
+            window.setView(view);
+
+            sf::Vector2f afterZoomCoords = window.mapPixelToCoords(mousePixel);
+            view.move(beforeZoomCoords - afterZoomCoords);
+            window.setView(view);
+
+            zoomVelocity *= 0.85f; // damping trackpad inertia killer 
+        }
+        //  Mouse spawning (frame-based, not event-based)
+        else if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
             if (!mouseHeld) {
                 sf::Vector2i pixelPos = sf::Mouse::getPosition(window);
                 sf::Vector2f worldPos = window.mapPixelToCoords(pixelPos);
 
-                double mass = 1e6; // by default
-                Vector2D velocity(0.0, 0.0);
-                Vector2D position(worldPos.x, worldPos.y);
+                sim.addBody(
+                        1e6,
+                        Vector2D(worldPos.x, worldPos.y),
+                        Vector2D(0.0, 0.0)
+                    );
 
-                sim.addBody(mass, position, velocity);
                 mouseHeld = true;
             }
-        } else {
-            mouseHeld = false;
         }
-    
 
+        // Update simulation
         float dt = clock.restart().asSeconds();
+        sim.update(dt * TIME_SCALE);
 
-        sim.update(dt * TIME_SCALE); // accelerating time to make it visible for a human eye
-
+        // Render
         window.clear(sf::Color::Black);
+
+        for (const auto& star : stars)
+            window.draw(star);
+
         sim.draw(window);
         window.display();
     }
 
     return 0;
-}
+    }
