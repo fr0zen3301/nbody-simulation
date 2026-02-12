@@ -4,6 +4,11 @@
 #include <functional>
 #include <algorithm>
 #include <cmath>
+#include <random>
+
+// High quality random number generation for star field. No hidden global state, distributions are explicit.
+std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)));
+std::uniform_real_distribution<float> dist(-2500.f, 2500.f);
 
 int main() {
     sf::RenderWindow window(sf::VideoMode({800, 600}), "N-body Simulation");
@@ -15,8 +20,8 @@ int main() {
         sf::CircleShape star(1.f);
         star.setFillColor(sf::Color(200, 200, 200));
 
-        float x = static_cast<float>(rand() % 5000 - 2500);
-        float y = static_cast<float>(rand() % 5000 - 2500);
+        float x = dist(rng);
+        float y = dist(rng);
         star.setPosition(sf::Vector2f(x, y));
         
         stars.push_back(star);
