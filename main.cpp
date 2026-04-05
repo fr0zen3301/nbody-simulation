@@ -13,7 +13,7 @@ std::uniform_real_distribution<float> dist(-2500.f, 2500.f);
 int main() {
     sf::RenderWindow window(sf::VideoMode({800, 600}), "N-body Simulation");
     window.setFramerateLimit(60);
-
+    // Generate star field
     std::vector<sf::CircleShape> stars;
     
     for (int i = 0; i < 1000; i++) {
@@ -75,7 +75,7 @@ int main() {
             zoomVelocity *= 0.85f; // damping trackpad inertia killer 
         }
         //  Mouse spawning (frame-based, not event-based)
-        else if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+        if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
             if (!mouseHeld) {
                 sf::Vector2i pixelPos = sf::Mouse::getPosition(window);
                 sf::Vector2f worldPos = window.mapPixelToCoords(pixelPos);
@@ -88,6 +88,8 @@ int main() {
 
                 mouseHeld = true;
             }
+        } else {
+            mouseHeld = false;   // reset on release to allow new spawns on next click
         }
 
         // Update simulation
