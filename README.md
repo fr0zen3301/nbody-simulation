@@ -37,11 +37,11 @@ Bodies are colored by mass:
 
 | Color | Mass |
 |-------|------|
-| Red | greater than 8e6 |
-| Orange | greater than 5e6 |
-| Yellow | greater than 2e6 |
-| Cyan | greater than 1e5 |
-| White | anything smaller (moons, planets) |
+| 🔴 Red | greater than 8e6 |
+| 🟠 Orange | greater than 5e6 |
+| 🟡 Yellow | greater than 2e6 |
+| 🔵 Cyan | greater than 1e5 |
+| ⚪ White | anything smaller (moons, planets) |
 
 ## Building
 
