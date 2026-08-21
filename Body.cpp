@@ -19,14 +19,11 @@ constexpr double MASS_CYAN = 1e5;
     Initial velocity doesn't depend on position. A body can be put anywhere and given any velocity.
     The point is how it is applied over time.
 */
-
-sf::Color getColorByMass(double mass);
-
 Body::Body(double m, const Vector2D& pos, const Vector2D& vel)  
-    : mass(m), position(pos), velocity(vel), force(0, 0), color(getColorByMass(m)) {}
+    : mass(m), position(pos), velocity(vel), force(0, 0), acceleration(0, 0), color(getColorByMass(m)) {}
     
 
-sf::Color getColorByMass(double mass) {
+sf::Color Body::getColorByMass(double mass) {
     if (mass > MASS_RED) return sf::Color::Red;
     if (mass > MASS_ORANGE) return sf::Color(255, 140, 0);  // Orange
     if (mass > MASS_YELLOW) return sf::Color::Yellow;
@@ -42,19 +39,6 @@ void Body::resetForce() {
     force = Vector2D(0, 0);
 }
 
-void Body::update(double dt) {
-    // F = ma -> a = F / m
-    Vector2D acceleration = force / mass;
-    velocity += acceleration * dt;
-    position += velocity * dt;
-
-    // add to trail
-    trail.push_back(sf::Vector2f(static_cast<float>(position.x), static_cast<float>(position.y)));
-    if (trail.size() > maxTrailLength) {
-        trail.erase(trail.begin()); // remove oldest points
-    }
-}
-
 Vector2D Body::getPosition() const {
     return position;
 }
@@ -63,15 +47,13 @@ Vector2D Body::computeGravitationalForce(const Body& other) const {
     Vector2D direction = other.position - position;
     double distance = direction.magnitude();
 
-    //prevent division by 0 or very small distances
-    if (distance < 1e-5) {
-        return Vector2D(0, 0);
-    }
+    constexpr double softening = 5.0;
+    double distSquared = distance * distance + softening * softening;
+
+    if (distance < 1e-9) return Vector2D(0, 0); 
 
     Vector2D directionNorm = direction / distance;
-
-    // Newton's law of universal gravitation
-    double forceMagnitude = (G * mass * other.mass) / (distance * distance);
+    double forceMagnitude = (G * mass * other.mass) / distSquared;
 
     return directionNorm * forceMagnitude;
 }

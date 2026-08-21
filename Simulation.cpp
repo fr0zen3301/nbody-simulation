@@ -13,11 +13,13 @@ Simulation::Simulation() {
 }
 
 void Simulation::update(double dt) {
-    // reset forces
+    // drift - moving positions using current velocity + stored acceleration
     for (auto& body : bodies) {
-        body.resetForce();
+        body.position += body.velocity * dt + body.acceleration * (0.5 * dt * dt);
     }
 
+    // recompute forces at the new position
+    for (auto& body : bodies) body.resetForce();
     for (size_t i = 0; i < bodies.size(); ++i) {
         for (size_t j = i + 1; j < bodies.size(); ++j) {
             Vector2D force = bodies[i].computeGravitationalForce(bodies[j]);
@@ -26,19 +28,41 @@ void Simulation::update(double dt) {
         }
     }
 
-    // update bodies and record trails
+    // kick - update velocity using the avg of old and new acceleration
     for (size_t i = 0; i < bodies.size(); ++i) {
-        bodies[i].update(dt);
+        Vector2D newAccel = bodies[i].force / bodies[i].mass;
+        bodies[i].velocity += (bodies[i].acceleration + newAccel) * (0.5 * dt);
+        bodies[i].acceleration = newAccel; // for the next frame
 
-        // add position to trail
+        // record trail
         sf::Vertex vertex;
-        vertex.position = sf::Vector2f(static_cast<float>(bodies[i].position.x), static_cast<float>(bodies[i].position.y));
-        vertex.color = bodies[i].color; 
+        vertex.position = sf::Vector2f(static_cast<float>(bodies[i].position.x),
+                                        static_cast<float>(bodies[i].position.y));
+        vertex.color = bodies[i].color;
         trails[i].push_back(vertex);
+        if (trails[i].size() > 500) trails[i].pop_front();
+    }
 
-        // limit trail length
-        if (trails[i].size() > 500) {
-            trails[i].pop_front();
+    // Merge bodies that get too close
+    constexpr double mergeDistance = 8.0;
+    for (size_t i = 0; i < bodies.size(); ++i) {
+        for (size_t j = i + 1; j < bodies.size(); ++j) {
+            double r = (bodies[j].position - bodies[i].position).magnitude();
+            if (r < mergeDistance) {
+                double m1 = bodies[i].mass, m2 = bodies[j].mass;
+                double total = m1 + m2;
+
+                // conserve momentum and center of mass
+                bodies[i].velocity = (bodies[i].velocity * m1 + bodies[j].velocity * m2) / total;
+                bodies[i].position = (bodies[i].position * m1 + bodies[j].position * m2) / total;
+                bodies[i].mass = total;
+                bodies[i].color = Body::getColorByMass(total);
+                
+                // remove the absorbed body
+                bodies.erase(bodies.begin() + j);
+                trails.erase(trails.begin() + j);
+                --j;
+            }
         }
     }
 }
@@ -67,4 +91,22 @@ void Simulation::draw(sf::RenderWindow& window) {
 void Simulation::addBody(double mass, const Vector2D& position, const Vector2D& velocity) {
     bodies.emplace_back(Body(mass, position, velocity));
     trails.emplace_back();
+}
+
+double Simulation::totalEnergy() const {
+    constexpr double G = 6.674e-11;
+    double kinetic = 0.0, potential = 0.0;
+
+    for (const auto& b : bodies) {
+        double v2 = b.velocity.x * b.velocity.x + b.velocity.y * b.velocity.y;
+        kinetic += 0.5 * b.mass * v2;
+    }
+    for (size_t i = 0; i < bodies.size(); ++i) {
+        for (size_t j = 0; j < bodies.size(); ++j) {
+            double r = (bodies[j].position - bodies[i].position).magnitude();
+            if (r > 1e-9)
+                potential += -G * bodies[i].mass * bodies[j].mass / r;
+        }
+    }
+    return kinetic + potential;
 }
