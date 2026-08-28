@@ -66,7 +66,7 @@ void Simulation::update(double dt) {
     for (size_t i = 0; i < bodies.size(); ++i) {
         for (size_t j = i + 1; j < bodies.size(); ++j) {
             double r = (bodies[j].position - bodies[i].position).magnitude();
-            double mergeDistance = Body::getRadiusByMass(bodies[i].mass) + Body::getRadiusByMass(bodies[j].mass);
+            double mergeDistance = 2.0 * Body::RADIUS;
             if (r < mergeDistance) {
                 double m1 = bodies[i].mass, m2 = bodies[j].mass;
                 double total = m1 + m2;
@@ -98,7 +98,7 @@ void Simulation::draw(sf::RenderWindow& window) {
         const Body& body = bodies[i];
 
         // draw body
-        float radius = Body::getRadiusByMass(body.mass);
+        float radius = Body::RADIUS;
         sf::Vector2f pos(static_cast<float>(body.position.x),
                          static_cast<float>(body.position.y));
 

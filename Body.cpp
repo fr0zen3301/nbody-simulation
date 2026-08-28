@@ -33,11 +33,6 @@ sf::Color Body::getColorByMass(double mass) {
     return sf::Color(255, 100, 90); // red dwarf
 }
 
-float Body::getRadiusByMass(double mass) {
-    float r = 2.f + 0.8f * static_cast<float>(std::log10(mass / 1e4));
-    return std::clamp(r, 2.f, 10.f);
-}
-
 void Body::applyForce(const Vector2D& f) {
     force += f;
 }

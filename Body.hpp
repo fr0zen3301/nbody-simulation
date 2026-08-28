@@ -10,6 +10,7 @@ public:
 
     static constexpr double G = 6.674e-11;
     static constexpr double SOFTENING = 5.0;
+    static constexpr float RADIUS = 5.f;
     
     void applyForce(const Vector2D& force);
     // void update(double dt);
@@ -25,6 +26,4 @@ public:
     // Gravitational force between this and other body
     Vector2D computeGravitationalForce(const Body& other) const;
     static sf::Color getColorByMass(double mass);
-    static float getRadiusByMass(double mass);
-
 };
