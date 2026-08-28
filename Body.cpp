@@ -34,8 +34,8 @@ sf::Color Body::getColorByMass(double mass) {
 }
 
 float Body::getRadiusByMass(double mass) {
-    float r = 2.f + 1.5f * static_cast<float>(std::log10(mass / 1e4));
-    return std::clamp(r, 2.f, 20.f);
+    float r = 2.f + 0.8f * static_cast<float>(std::log10(mass / 1e4));
+    return std::clamp(r, 2.f, 10.f);
 }
 
 void Body::applyForce(const Vector2D& f) {
@@ -54,8 +54,7 @@ Vector2D Body::computeGravitationalForce(const Body& other) const {
     Vector2D direction = other.position - position;
     double distance = direction.magnitude();
 
-    constexpr double softening = 5.0;
-    double distSquared = distance * distance + softening * softening;
+    double distSquared = distance * distance + SOFTENING * SOFTENING;
 
     if (distance < 1e-9) return Vector2D(0, 0); 
 

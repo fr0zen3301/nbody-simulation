@@ -1,14 +1,21 @@
 #include "Simulation.hpp"
+#include "QuadTree.hpp"
 #include <SFML/Graphics/VertexArray.hpp>
 #include <SFML/Graphics/Color.hpp>
 #include <cmath>
 #include <algorithm>
 
 Simulation::Simulation() {
-    // initial bodies
-    bodies.emplace_back(Body(1e14, Vector2D(300, 300), Vector2D(0, 5)));
-    bodies.emplace_back(Body(1e14, Vector2D(500, 300), Vector2D(0, -5)));
-    bodies.emplace_back(Body(2e6, Vector2D(400, 200), Vector2D(-5, 0)));
+    // hierarchical triple
+    const Vector2D c(400, 300);
+    const double m = 1e14;
+
+    // binary, separation 80
+    bodies.emplace_back(m, c + Vector2D(-40, 0), Vector2D(0.0, 6.46));
+    bodies.emplace_back(m, c + Vector2D(40, 0), Vector2D(0.0, -6.46));
+
+    // companion orbiting the pair
+    bodies.emplace_back(5e6, c + Vector2D(0, -280), Vector2D(6.90, 0.0));
 
     // initialize trails
     trails.resize(bodies.size());
@@ -20,14 +27,24 @@ void Simulation::update(double dt) {
         body.position += body.velocity * dt + body.acceleration * (0.5 * dt * dt);
     }
 
-    // recompute forces at the new position
+    // recompute forces at the new position: Barnes-Hut - O(N log N)
     for (auto& body : bodies) body.resetForce();
-    for (size_t i = 0; i < bodies.size(); ++i) {
-        for (size_t j = i + 1; j < bodies.size(); ++j) {
-            Vector2D force = bodies[i].computeGravitationalForce(bodies[j]);
-            bodies[i].applyForce(force);
-            bodies[j].applyForce(force * -1);
+    
+    if (!bodies.empty()) {
+        // bounding square around all bodies
+        Vector2D lo = bodies[0].position, hi = bodies[0].position;
+        for (const auto& b : bodies) {
+            lo.x = std::min(lo.x, b.position.x);
+            lo.y = std::min(lo.y, b.position.y);
+            hi.x = std::max(hi.x, b.position.x);
+            hi.y = std::max(hi.y, b.position.y);
         }
+        Vector2D center((lo.x + hi.x) / 2, (lo.y + hi.y) / 2);
+        double halfSize = std::max(hi.x - lo.x, hi.y - lo.y) / 2 + 1.0;
+
+        QuadTree tree(center, halfSize);
+        for (auto& b : bodies) tree.insert(&b);
+        for (auto& b : bodies) b.applyForce(tree.computeForce(b, 0.5));
     }
 
     // kick - update velocity using the avg of old and new acceleration
@@ -85,16 +102,6 @@ void Simulation::draw(sf::RenderWindow& window) {
         sf::Vector2f pos(static_cast<float>(body.position.x),
                          static_cast<float>(body.position.y));
 
-        // glow halo
-        // float glowRadius = radius * 3.f;
-        // sf::CircleShape glow(glowRadius);
-        // sf::Color glowColor = body.color;
-        // glowColor.a = 40;
-        // glow.setFillColor(glowColor);
-        // glow.setOrigin(sf::Vector2f(glowRadius, glowRadius));
-        // glow.setPosition(pos);
-        // window.draw(glow, sf::BlendAdd);
-
         // solid body core
         sf::CircleShape circle(radius);
         circle.setFillColor(body.color);
@@ -146,7 +153,7 @@ double Simulation::totalEnergy() const {
     for (size_t i = 0; i < bodies.size(); ++i) {
         for (size_t j = i + 1; j < bodies.size(); ++j) {
             double r = (bodies[j].position - bodies[i].position).magnitude();
-            potential += -G * bodies[i].mass * bodies[j].mass / std::sqrt(r * r + softening * softening);
+            potential += -G * bodies[i].mass * bodies[j].mass / std::sqrt(r * r + Body::SOFTENING * Body::SOFTENING);
         }
     }
     return kinetic + potential;
@@ -192,4 +199,24 @@ void Simulation::loadSolarSystem() {
     for (size_t k = 1; k < bodies.size(); ++k)
         totalP += bodies[k].velocity * bodies[k].mass;
     bodies[0].velocity = totalP / (-sunMass);
+}
+
+void Simulation::loadFigureEight() {
+    clear();
+
+    // Chenciner-Montgomery figure-eight
+    const double M = 1e14; // all three bodies
+    const double L = 200.0;
+    const Vector2D c(400, 300);
+
+    const double V = std::sqrt(Body::G * M / L);
+
+    Vector2D r1(0.97000436, -0.24308753);
+    Vector2D v3(-0.93240737, -0.86473146);
+    Vector2D v1 = v3 * -0.5;
+
+    bodies.emplace_back(M, c + r1 * L, v1 * V);
+    bodies.emplace_back(M, c - r1 * L, v1 * V);
+    bodies.emplace_back(M, c, v3 * V);
+    for (int k = 0; k < 3; ++k) trails.emplace_back();
 }

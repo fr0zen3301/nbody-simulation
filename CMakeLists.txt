@@ -1,3 +1,4 @@
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 cmake_minimum_required(VERSION 3.16)
 project(nbody VERSION 3.0.0 LANGUAGES CXX)
 
@@ -20,5 +21,5 @@ FetchContent_Declare(imgui-sfml
     GIT_TAG v3.0)
 FetchContent_MakeAvailable(imgui-sfml)
 
-add_executable(nbody main.cpp Simulation.cpp Body.cpp)
+add_executable(nbody main.cpp Simulation.cpp Body.cpp QuadTree.cpp)
 target_link_libraries(nbody PRIVATE SFML::Graphics ImGui-SFML::ImGui-SFML)

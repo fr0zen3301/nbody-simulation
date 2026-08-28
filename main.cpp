@@ -63,8 +63,7 @@ int main() {
     }
 
     sf::Vector2f position(0.f, 0.f);
-    sf::Vector2f size(800.f, 600.f);
-    sf::Vector2f center(0.f, 0.f);
+    sf::Vector2f size(1280.f, 800.f);
     sf::View view(sf::FloatRect(position, size));
     window.setView(view);
 
@@ -148,6 +147,9 @@ int main() {
         }
         if (ImGui::Button("Load Solar System (similar system)")) {
             sim.loadSolarSystem();
+        }
+        if (ImGui::Button("Three Body System")) {
+            sim.loadFigureEight();
         }
         ImGui::Text("Bodies: %zu", sim.getBodyCount());
         ImGui::End();

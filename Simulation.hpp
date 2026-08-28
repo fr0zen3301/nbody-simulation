@@ -16,6 +16,7 @@ public:
     void addBody(double mass, const Vector2D& position, const Vector2D& velocity);
     void clear();
     void loadSolarSystem();
+    void loadFigureEight();
     size_t getBodyCount() const { return bodies.size(); }
 
     struct MergeFlash {

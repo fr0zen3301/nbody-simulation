@@ -8,6 +8,9 @@ class Body {
 public:
     Body(double mass, const Vector2D& position, const Vector2D& velocity);
 
+    static constexpr double G = 6.674e-11;
+    static constexpr double SOFTENING = 5.0;
+    
     void applyForce(const Vector2D& force);
     // void update(double dt);
     void resetForce();
@@ -24,6 +27,4 @@ public:
     static sf::Color getColorByMass(double mass);
     static float getRadiusByMass(double mass);
 
-private:
-    static constexpr double G = 6.674e-11; // Gravitational constant, calculated as needed
 };
