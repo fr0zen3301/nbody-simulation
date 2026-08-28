@@ -1,6 +1,8 @@
 #include "Simulation.hpp"
 #include <SFML/Graphics/VertexArray.hpp>
 #include <SFML/Graphics/Color.hpp>
+#include <cmath>
+#include <algorithm>
 
 Simulation::Simulation() {
     // initial bodies
@@ -44,10 +46,10 @@ void Simulation::update(double dt) {
     }
 
     // Merge bodies that get too close
-    constexpr double mergeDistance = 8.0;
     for (size_t i = 0; i < bodies.size(); ++i) {
         for (size_t j = i + 1; j < bodies.size(); ++j) {
             double r = (bodies[j].position - bodies[i].position).magnitude();
+            double mergeDistance = Body::getRadiusByMass(bodies[i].mass) + Body::getRadiusByMass(bodies[j].mass);
             if (r < mergeDistance) {
                 double m1 = bodies[i].mass, m2 = bodies[j].mass;
                 double total = m1 + m2;
@@ -57,6 +59,10 @@ void Simulation::update(double dt) {
                 bodies[i].position = (bodies[i].position * m1 + bodies[j].position * m2) / total;
                 bodies[i].mass = total;
                 bodies[i].color = Body::getColorByMass(total);
+                bodies[i].acceleration = Vector2D(0, 0);
+
+                // tiny bit of state
+                flashes.push_back({bodies[i].position, 0.f});
                 
                 // remove the absorbed body
                 bodies.erase(bodies.begin() + j);
@@ -65,6 +71,9 @@ void Simulation::update(double dt) {
             }
         }
     }
+    constexpr float FLASH_LIFETIME = 0.5f;
+    for (auto& f : flashes) f.age += static_cast<float>(dt);
+    flashes.erase(std::remove_if(flashes.begin(), flashes.end(), [](const MergeFlash& f) { return f.age > 0.5f; }), flashes.end());
 }
 
 void Simulation::draw(sf::RenderWindow& window) {
@@ -72,18 +81,50 @@ void Simulation::draw(sf::RenderWindow& window) {
         const Body& body = bodies[i];
 
         // draw body
-        sf::CircleShape circle(5);
-        circle.setPosition(sf::Vector2f(static_cast<float>(body.position.x), static_cast<float>(body.position.y)));
-        circle.setFillColor(body.color); // apply the color
-        circle.setOrigin(sf::Vector2f(5.f, 5.f));
+        float radius = Body::getRadiusByMass(body.mass);
+        sf::Vector2f pos(static_cast<float>(body.position.x),
+                         static_cast<float>(body.position.y));
+
+        // glow halo
+        // float glowRadius = radius * 3.f;
+        // sf::CircleShape glow(glowRadius);
+        // sf::Color glowColor = body.color;
+        // glowColor.a = 40;
+        // glow.setFillColor(glowColor);
+        // glow.setOrigin(sf::Vector2f(glowRadius, glowRadius));
+        // glow.setPosition(pos);
+        // window.draw(glow, sf::BlendAdd);
+
+        // solid body core
+        sf::CircleShape circle(radius);
+        circle.setFillColor(body.color);
+        circle.setOrigin(sf::Vector2f(radius, radius));
+        circle.setPosition(pos);
         window.draw(circle);
 
-        // Convert deque trail to sf::VertexArray for drawing
-        sf::VertexArray trail(sf::PrimitiveType::LineStrip, trails[i].size());
-        for (size_t j = 0; j < trails[i].size(); ++j) {
-            trail[j] =trails[i][j];
+        // trail with fade
+        size_t n = trails[i].size();
+        sf::VertexArray trail(sf::PrimitiveType::LineStrip, n);
+        for (size_t j = 0; j < n; ++j) {
+            trail[j] = trails[i][j];
+            trail[j].color.a = static_cast<std::uint8_t>(255 * (j + 1) / n);
         }
         window.draw(trail);
+    }
+    
+    // merge flashes -> expansion
+    for (const auto& f : flashes) {
+        float t = f.age / 0.5f;
+        float r = 5.f + 30.f * t;
+        sf::CircleShape ring(r);
+        ring.setOrigin(sf::Vector2f(r, r));
+        ring.setPosition(sf::Vector2f(static_cast<float>(f.position.x),
+                                      static_cast<float>(f.position.y)));
+        ring.setFillColor(sf::Color::Transparent);
+        ring.setOutlineThickness(2.f);
+        ring.setOutlineColor(sf::Color(255, 255, 255,
+                             static_cast<std::uint8_t>(255 * (1.f - t))));
+        window.draw(ring);
     }
 }
 
@@ -101,12 +142,54 @@ double Simulation::totalEnergy() const {
         double v2 = b.velocity.x * b.velocity.x + b.velocity.y * b.velocity.y;
         kinetic += 0.5 * b.mass * v2;
     }
+    constexpr double softening = 5.0;
     for (size_t i = 0; i < bodies.size(); ++i) {
-        for (size_t j = 0; j < bodies.size(); ++j) {
+        for (size_t j = i + 1; j < bodies.size(); ++j) {
             double r = (bodies[j].position - bodies[i].position).magnitude();
-            if (r > 1e-9)
-                potential += -G * bodies[i].mass * bodies[j].mass / r;
+            potential += -G * bodies[i].mass * bodies[j].mass / std::sqrt(r * r + softening * softening);
         }
     }
     return kinetic + potential;
+}
+
+void Simulation::clear() {
+    bodies.clear();
+    trails.clear();
+    flashes.clear();
+}
+
+void Simulation::loadSolarSystem() {
+    clear();
+
+    constexpr double G = 6.674e-11;
+    const Vector2D sunPos(400, 300);
+    const double sunMass = 1e14;
+    
+    // place a planet on a circular orbit at radius r
+    auto addPlanet = [&](double mass, double r, double angleDeg) {
+        double a = angleDeg * M_PI / 180.0;
+        Vector2D pos(sunPos.x + std::cos(a) * r,
+                     sunPos.y + std::sin(a) * r);
+        double v = std::sqrt(G * sunMass / r);
+
+        Vector2D vel(-std::sin(a) * v, std::cos(a) * v);
+        bodies.emplace_back(mass, pos, vel);
+        trails.emplace_back();
+    };
+
+    // sun
+    bodies.emplace_back(sunMass, sunPos, Vector2D(0, 0));
+    trails.emplace_back();
+
+    // addPlanet: -- mass -- r -- start angle
+    addPlanet(1e5, 90, 0);    // how inner dwarf
+    addPlanet(4e5, 140, 130);
+    addPlanet(1e6, 200, 250);
+    addPlanet(3e6, 280, 60);
+    addPlanet(5e6, 380, 180); // outer dwarf
+
+    Vector2D totalP(0, 0);
+    for (size_t k = 1; k < bodies.size(); ++k)
+        totalP += bodies[k].velocity * bodies[k].mass;
+    bodies[0].velocity = totalP / (-sunMass);
 }

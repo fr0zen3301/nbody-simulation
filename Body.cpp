@@ -1,6 +1,8 @@
 #include "Body.hpp"
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/Color.hpp>
+#include <cmath>
+#include <algorithm>
 
 constexpr double MASS_RED = 8e6;
 constexpr double MASS_ORANGE = 5e6;
@@ -24,11 +26,16 @@ Body::Body(double m, const Vector2D& pos, const Vector2D& vel)
     
 
 sf::Color Body::getColorByMass(double mass) {
-    if (mass > MASS_RED) return sf::Color::Red;
-    if (mass > MASS_ORANGE) return sf::Color(255, 140, 0);  // Orange
-    if (mass > MASS_YELLOW) return sf::Color::Yellow;
-    if (mass > MASS_CYAN) return sf::Color::Cyan;
-    return sf::Color::White;
+    if (mass > MASS_RED) return sf::Color(157, 180, 255); // blue-white giant
+    if (mass > MASS_ORANGE) return sf::Color::White;
+    if (mass > MASS_YELLOW) return sf::Color(255, 240, 10); // yellow, sun-like
+    if (mass > MASS_CYAN) return sf::Color(255, 150, 80); // orange dwarf
+    return sf::Color(255, 100, 90); // red dwarf
+}
+
+float Body::getRadiusByMass(double mass) {
+    float r = 2.f + 1.5f * static_cast<float>(std::log10(mass / 1e4));
+    return std::clamp(r, 2.f, 20.f);
 }
 
 void Body::applyForce(const Vector2D& f) {

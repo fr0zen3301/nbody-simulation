@@ -22,6 +22,7 @@ public:
     // Gravitational force between this and other body
     Vector2D computeGravitationalForce(const Body& other) const;
     static sf::Color getColorByMass(double mass);
+    static float getRadiusByMass(double mass);
 
 private:
     static constexpr double G = 6.674e-11; // Gravitational constant, calculated as needed

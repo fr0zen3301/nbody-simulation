@@ -15,29 +15,50 @@ std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)));
 std::uniform_real_distribution<float> dist(-2500.f, 2500.f);
 
 int main() {
-    sf::RenderWindow window(sf::VideoMode({800, 600}), "N-body Simulation");
+    sf::RenderWindow window(sf::VideoMode({1280, 800}), "EMMA (Engine for Multi-body Mechanics and Astrophysics)");
     window.setFramerateLimit(60);
 
     if (!ImGui::SFML::Init(window)) {
         return -1; // ImGui-SFML failed to initialize
     }
 
+    // ImGuin styling
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.WindowRounding = 6.f;
+    style.FrameRounding = 4.f;
+    style.Colors[ImGuiCol_WindowBg]      = ImVec4(0.05f, 0.05f, 0.08f, 0.85f);
+    style.Colors[ImGuiCol_TitleBg]       = ImVec4(0.08f, 0.08f, 0.12f, 1.f);
+    style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.10f, 0.10f, 0.16f, 1.f);
+    style.Colors[ImGuiCol_FrameBg]       = ImVec4(0.12f, 0.12f, 0.18f, 1.f);
+    style.Colors[ImGuiCol_SliderGrab]    = ImVec4(0.55f, 0.65f, 0.9f, 1.f);
+    style.Colors[ImGuiCol_Button]        = ImVec4(0.15f, 0.18f, 0.28f, 1.f);
+
+
+    // Custom fonts
     sf::Font font;
-    if (!font.openFromFile("fonts/font.ttf")) {
+    if (!font.openFromFile("fonts/font.otf")) {
         return -1;
     }
 
     // Generate star field
     std::vector<sf::CircleShape> stars;
+    std::uniform_real_distribution<float> radiusDist(0.5f, 1.5f);
+    std::uniform_int_distribution<int> brightDist(120, 255);
+    std::uniform_int_distribution<int> tintDust(0, 2);
     
     for (int i = 0; i < 1000; i++) {
-        sf::CircleShape star(1.f);
-        star.setFillColor(sf::Color(200, 200, 200));
+        sf::CircleShape star(radiusDist(rng));
 
-        float x = dist(rng);
-        float y = dist(rng);
-        star.setPosition(sf::Vector2f(x, y));
-        
+        int b = brightDist(rng);
+        sf::Color c;
+        switch (tintDust(rng)) {
+            case 0: c = sf::Color(b, b, static_cast<std::uint8_t>(std::min(255, b + 30))); break;
+            case 1: c = sf::Color(static_cast<std::uint8_t>(std::min(255, b + 30)), b, b); break;
+            default: c = sf::Color(b, b, b); break;
+        }
+        star.setFillColor(c);
+
+        star.setPosition(sf::Vector2f(dist(rng), dist(rng)));
         stars.push_back(star);
     }
 
@@ -48,7 +69,7 @@ int main() {
     window.setView(view);
 
     // HUD view: 1 unit = 1 pixel, top-left at (0,0), unaffected by world zoom
-    sf::View hudView(sf::FloatRect({0.f, 0.f}, {800.f, 600.f}));
+    sf::View hudView(sf::FloatRect({0.f, 0.f}, {1280.f, 800.f}));
 
     // HUD text (SFML 3 requires the font in the constructor)
     sf::Text hudText(font);
@@ -61,6 +82,8 @@ int main() {
 
     Simulation sim;
     const float TIME_SCALE = 10.f;
+    const float FIXED_DT = 1.f / 120.f;
+    float accumulator = 0.f;
     sf::Clock clock;
 
     // Spawn-panel state (driven by the ImGui sliders)
@@ -123,6 +146,9 @@ int main() {
             sim.addBody(std::pow(10.f, spawnMassExp),
                         Vector2D(c.x, c.y), vel);
         }
+        if (ImGui::Button("Load Solar System (similar system)")) {
+            sim.loadSolarSystem();
+        }
         ImGui::Text("Bodies: %zu", sim.getBodyCount());
         ImGui::End();
 
@@ -147,7 +173,11 @@ int main() {
         }
 
         // Update simulation (dt computed above)
-        sim.update(dt * TIME_SCALE);
+        accumulator += dt * TIME_SCALE;
+        while (accumulator >= FIXED_DT) {
+            sim.update(FIXED_DT);
+            accumulator -= FIXED_DT;
+        }
 
         // Render
         window.clear(sf::Color::Black);

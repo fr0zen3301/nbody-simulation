@@ -1,0 +1,9 @@
+.vscode/
+build/
+imgui.ini
+.DS_Store
+
+# compiled artifacts
+nbody
+*.o
+*.out
